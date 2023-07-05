@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/go-openapi/runtime"
@@ -33,8 +33,6 @@ import (
 	_ "github.com/sigstore/rekor/pkg/types/rfc3161/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/rpm/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/tuf/v0.0.1"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 var TIMEOUT, _ = time.ParseDuration("30s")
@@ -55,8 +53,7 @@ type EntryInfo struct {
 }
 
 func main() {
-	connectionString := fmt.Sprintf("%s?parseTime=True", Config.Database.String)
-	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
 	if err != nil {
 		log.Panicln("failed to connect database")
 	}
