@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"log"
 	"sync"
 	"time"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 
 	"github.com/go-openapi/runtime"
 
@@ -38,15 +40,28 @@ import (
 var TIMEOUT, _ = time.ParseDuration("30s")
 var SLEEP_DURATION, _ = time.ParseDuration("20s")
 
+type CrawledEntry struct {
+	gorm.Model
+	Ts          time.Time
+	Idx         int64
+	Sub         string
+	Pubkey_hash string
+}
+
 type EntryInfo struct {
-	EntryImpl types.EntryImpl
 	Timestamp int64
 	Index     int64
+	EntryImpl types.EntryImpl
 }
 
 func main() {
-	db, _ := sql.Open("mysql", Config.Database.String)
-	defer db.Close()
+	connectionString := fmt.Sprintf("%s?parseTime=True", Config.Database.String)
+	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{})
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+
+	db.AutoMigrate(&CrawledEntry{})
 
 	rekorClient, _ := client.GetRekorClient(
 		Config.Rekor.Url,
@@ -59,39 +74,17 @@ func main() {
 	}
 }
 
-func ExecuteCrawlRun(rekorClient *rekorClient.Rekor, db *sql.DB) {
+func ExecuteCrawlRun(rekorClient *rekorClient.Rekor, db *gorm.DB) {
 	var mostRecentlyCrawledIndex int64 = DetermineStartIndex(db)
-	var maximumIndex = CalculateCurrentMaximumIndex(rekorClient) - 10
+	var maximumIndex = mostRecentlyCrawledIndex + 100 //CalculateCurrentMaximumIndex(rekorClient)
 	log.Println("Crawling until index:", maximumIndex)
 
-	rekordQueue := make(chan EntryInfo)
+	rekordQueue := make(chan CrawledEntry)
 	go SpawnRekorCrawlerRoutines(mostRecentlyCrawledIndex, maximumIndex, rekorClient, rekordQueue)
 
-	tx, err := db.Begin()
-	defer tx.Rollback()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stmt, err := tx.Prepare("INSERT INTO events VALUES (from_unixtime(?),?,?,?)")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for entry := range rekordQueue {
-		verifier, _ := entry.EntryImpl.Verifier()
-		subject := ""
-		if len(verifier.Subjects()) > 0 {
-			subject = verifier.Subjects()[0]
-		}
-
-		identities, _ := verifier.Identities()
-		pubkey_hash := CalculateSha256Of(identities[0])
-
-		stmt.Exec(entry.Timestamp, entry.Index, subject, pubkey_hash)
+		db.Create(&entry)
 	}
-
-	tx.Commit()
 }
 
 func CalculateSha256Of(s string) string {
@@ -101,7 +94,7 @@ func CalculateSha256Of(s string) string {
 	return fmt.Sprintf("%x", bs)
 }
 
-func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan EntryInfo) {
+func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
 	defer close(rekordQueue)
 
 	var wg sync.WaitGroup
@@ -127,7 +120,7 @@ func CalculateCurrentMaximumIndex(rekorClient *rekorClient.Rekor) int64 {
 	return inactiveIndexCount
 }
 
-func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.WaitGroup, elementQueue chan EntryInfo) {
+func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.WaitGroup, elementQueue chan CrawledEntry) {
 	defer wg.Done()
 
 	params := entries.NewGetLogEntryByIndexParams()
@@ -146,30 +139,43 @@ func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.Wait
 
 		pe, err := models.UnmarshalProposedEntry(bytes.NewReader(b), runtime.JSONConsumer())
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		eimpl, err := types.UnmarshalEntry(pe)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
-		elementQueue <- EntryInfo{
-			eimpl,
-			*entry.IntegratedTime,
-			*entry.LogIndex,
+		verifier, _ := eimpl.Verifier()
+		subject := ""
+		if len(verifier.Subjects()) > 0 {
+			subject = verifier.Subjects()[0]
+		}
+
+		identities, _ := verifier.Identities()
+		pubkey_hash := CalculateSha256Of(identities[0])
+
+		elementQueue <- CrawledEntry{
+			Ts:          time.Unix(*entry.IntegratedTime, 0),
+			Idx:         *entry.LogIndex,
+			Sub:         subject,
+			Pubkey_hash: pubkey_hash,
 		}
 	}
 }
 
-func DetermineStartIndex(db *sql.DB) int64 {
-	var index int64 = Config.Rekor.StartIndex
-	query := "SELECT MAX(idx) FROM events"
+func DetermineStartIndex(db *gorm.DB) int64 {
+	var index int64 = -1
+	query := "SELECT MAX(idx) FROM crawled_entries"
 
-	if err := db.QueryRow(query).Scan(&index); err != nil {
+	db.Raw(query).Scan(&index)
+	if index == -1 {
+		index = Config.Rekor.StartIndex
 		log.Println("Could not fetch index from db, falling back to config start index:", index)
 	}
+
 	return index
 }

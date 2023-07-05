@@ -25,4 +25,5 @@ func init() {
 	if err != nil {
 		log.Println("WARNING: Could not read the configuration file - falling back to defaults and environment variables")
 	}
+	cleanenv.ReadEnv(&Config)
 }
