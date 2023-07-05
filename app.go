@@ -45,8 +45,7 @@ type EntryInfo struct {
 }
 
 func main() {
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s", Config.Database.Username, Config.Database.Password, Config.Database.Url, Config.Database.Name)
-	db, _ := sql.Open("mysql", connectionString)
+	db, _ := sql.Open("mysql", Config.Database.String)
 	defer db.Close()
 
 	rekorClient, _ := client.GetRekorClient(
