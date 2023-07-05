@@ -1,0 +1,23 @@
+services:
+  mysql:
+    image: "mysql"
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d/:ro
+  grafana:
+    depends_on:
+      - mysql
+    image: "grafana/grafana-enterprise"
+    ports: 
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
+  crawler:
+    depends_on:
+      - mysql
+    build:
+      context: "."
+    volumes:
+      - ./config.yml:/config.yml

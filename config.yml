@@ -1,0 +1,8 @@
+database:
+  user: grafana
+  password: password
+  name: rekor
+  url: mysql:3306
+
+rekor:
+  initial-start-index: 24686621
