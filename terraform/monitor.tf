@@ -10,7 +10,7 @@ resource "digitalocean_database_cluster" "postgres-cluster" {
   region     = "fra1"
   size       = "db-s-1vcpu-1gb"
   version    = 12
-
+  private_network_uuid = digitalocean_vpc.default-fra1.id
 }
 
 resource "digitalocean_database_db" "monitor-db" {
@@ -67,7 +67,7 @@ resource "digitalocean_app" "rekor-monitor" {
 
       env {
         key   = "DATABASE_URL"
-        value = "postgres://${digitalocean_database_user.monitor-db-user.name}:${digitalocean_database_user.monitor-db-user.password}@${digitalocean_database_cluster.postgres-cluster.private_host}:${digitalocean_database_cluster.postgres-cluster.port}/${digitalocean_database_db.monitor-db.name}"
+        value = "postgres://${digitalocean_database_user.monitor-db-user.name}:${digitalocean_database_user.monitor-db-user.password}@${digitalocean_database_cluster.postgres-cluster.host}:${digitalocean_database_cluster.postgres-cluster.port}/${digitalocean_database_db.monitor-db.name}"
         type  = "SECRET"
       }
     }
