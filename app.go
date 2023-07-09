@@ -73,17 +73,24 @@ func main() {
 }
 
 func ExecuteCrawlRun(rekorClient *rekorClient.Rekor, db *gorm.DB) {
-	var mostRecentlyCrawledIndex int64 = DetermineStartIndex(db)
-	var maximumIndex = CalculateCurrentMaximumIndex(rekorClient)
-	var targetIndex = Min(mostRecentlyCrawledIndex+BATCH_MAXIMUM, maximumIndex)
+	mostRecentlyCrawledIndex := DetermineStartIndex(db)
+	maximumIndex := CalculateCurrentMaximumIndex(rekorClient)
+	targetIndex := Min(mostRecentlyCrawledIndex+BATCH_MAXIMUM, maximumIndex)
+	itemCountToCrawl := targetIndex - mostRecentlyCrawledIndex
+	crawledEntries := make([]CrawledEntry, itemCountToCrawl)
+
 	log.Println("Crawling until index:", targetIndex)
 
 	rekordQueue := make(chan CrawledEntry)
 	go SpawnRekorCrawlerRoutines(mostRecentlyCrawledIndex, targetIndex, rekorClient, rekordQueue)
 
+	entryCount := 0
 	for entry := range rekordQueue {
-		db.Create(&entry)
+		crawledEntries[entryCount] = entry
+		entryCount += 1
 	}
+
+	db.Create(&crawledEntries)
 }
 
 func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
