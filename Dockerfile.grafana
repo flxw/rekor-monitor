@@ -1,2 +1,5 @@
 FROM grafana/grafana-enterprise
-COPY etc/grafana/provisioning/datasources/postgres.yaml /etc/grafana/provisioning/datasources/postgres.yaml
+COPY grafana-provisioning/postgres.yaml  /etc/grafana/provisioning/datasources/
+COPY grafana-provisioning/providers.yaml /etc/grafana/provisioning/dashboards/
+COPY grafana-provisioning/dashboard.json /var/lib/grafana/dashboards/
+
