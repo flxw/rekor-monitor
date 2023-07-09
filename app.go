@@ -34,7 +34,7 @@ import (
 	_ "github.com/sigstore/rekor/pkg/types/tuf/v0.0.1"
 )
 
-const BATCH_MAXIMUM int64 = 20
+const BATCH_MAXIMUM int64 = 150
 
 var TIMEOUT, _ = time.ParseDuration("30s")
 var SLEEP_DURATION, _ = time.ParseDuration("20s")
