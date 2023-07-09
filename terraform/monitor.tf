@@ -4,12 +4,12 @@ resource "digitalocean_vpc" "default-fra1" {
 }
 
 resource "digitalocean_database_cluster" "postgres-cluster" {
-  name       = "app-acd8ae2b-31d1-4da7-b4d5-2203ba9a3f8d"
-  engine     = "pg"
-  node_count = 1
-  region     = "fra1"
-  size       = "db-s-1vcpu-1gb"
-  version    = 12
+  name                 = "app-acd8ae2b-31d1-4da7-b4d5-2203ba9a3f8d"
+  engine               = "pg"
+  node_count           = 1
+  region               = "fra1"
+  size                 = "db-s-1vcpu-1gb"
+  version              = 12
   private_network_uuid = digitalocean_vpc.default-fra1.id
 }
 
@@ -23,21 +23,34 @@ resource "digitalocean_database_user" "monitor-db-user" {
   name       = "rekord-monitor-dev"
 }
 
+resource "digitalocean_database_user" "grafana" {
+  cluster_id = digitalocean_database_cluster.postgres-cluster.id
+  name       = "grafana-read"
+}
+
 resource "digitalocean_app" "rekor-monitor" {
   spec {
     name   = "rekor-monitor"
     region = "fra"
 
-    /*service {
-      name           = "grafana"
-      instance_count = 1
-      http_port      = 3000
+    service {
+      name               = "grafana"
+      instance_count     = 1
+      instance_size_slug = "basic-xxs"
+      http_port          = 3000
+
       image {
         registry_type = "DOCKER_HUB"
         registry      = "grafana"
         repository    = "grafana-enterprise"
+        tag           = "latest"
       }
-    }*/
+
+      env {
+        key   = "GF_FEATURE_TOGGLES_ENABLE"
+        value = "publicDashboards"
+      }
+    }
 
     database {
       cluster_name = digitalocean_database_cluster.postgres-cluster.name
