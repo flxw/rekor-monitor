@@ -1,2 +1,2 @@
 FROM grafana/grafana-enterprise
-COPY etc /
+COPY etc/grafana/provisioning/datasources/postgres.yaml /etc/grafana/provisioning/datasources/postgres.yaml
