@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -20,7 +19,7 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/models"
 	"github.com/sigstore/rekor/pkg/types"
 
-	// these imports are to call the packages' init methods
+	// these imports exist to trigger the package init methods
 	_ "github.com/sigstore/rekor/pkg/types/alpine/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/cose/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/dsse/v0.0.1"
@@ -34,6 +33,8 @@ import (
 	_ "github.com/sigstore/rekor/pkg/types/rpm/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/tuf/v0.0.1"
 )
+
+const BATCH_MAXIMUM int64 = 150
 
 var TIMEOUT, _ = time.ParseDuration("30s")
 var SLEEP_DURATION, _ = time.ParseDuration("20s")
@@ -73,22 +74,16 @@ func main() {
 
 func ExecuteCrawlRun(rekorClient *rekorClient.Rekor, db *gorm.DB) {
 	var mostRecentlyCrawledIndex int64 = DetermineStartIndex(db)
-	var maximumIndex = mostRecentlyCrawledIndex + 100 //CalculateCurrentMaximumIndex(rekorClient)
-	log.Println("Crawling until index:", maximumIndex)
+	var maximumIndex = CalculateCurrentMaximumIndex(rekorClient)
+	var targetIndex = Min(mostRecentlyCrawledIndex+BATCH_MAXIMUM, maximumIndex)
+	log.Println("Crawling until index:", targetIndex)
 
 	rekordQueue := make(chan CrawledEntry)
-	go SpawnRekorCrawlerRoutines(mostRecentlyCrawledIndex, maximumIndex, rekorClient, rekordQueue)
+	go SpawnRekorCrawlerRoutines(mostRecentlyCrawledIndex, targetIndex, rekorClient, rekordQueue)
 
 	for entry := range rekordQueue {
 		db.Create(&entry)
 	}
-}
-
-func CalculateSha256Of(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	bs := h.Sum(nil)
-	return fmt.Sprintf("%x", bs)
 }
 
 func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
