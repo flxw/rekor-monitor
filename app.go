@@ -148,13 +148,23 @@ func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.Wait
 			return
 		}
 
-		verifier, _ := eimpl.Verifier()
+		verifier, err := eimpl.Verifier()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		subject := ""
 		if len(verifier.Subjects()) > 0 {
 			subject = verifier.Subjects()[0]
 		}
 
 		identities, _ := verifier.Identities()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		pubkey_hash := CalculateSha256Of(identities[0])
 
 		elementQueue <- CrawledEntry{
