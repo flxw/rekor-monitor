@@ -5,6 +5,7 @@ services:
       - MYSQL_RANDOM_ROOT_PASSWORD=1
     volumes:
       - ./sql:/docker-entrypoint-initdb.d/:ro
+      
   grafana:
     depends_on:
       - mysql
@@ -21,3 +22,5 @@ services:
       context: "."
     volumes:
       - ./config.yml:/config.yml
+    environment:
+      - DATABASE_URL=grafana:password@tcp(mysql)/rekor
