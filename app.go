@@ -41,8 +41,8 @@ var SLEEP_DURATION, _ = time.ParseDuration("20s")
 
 type CrawledEntry struct {
 	gorm.Model
-	Ts          time.Time
-	Idx         int64
+	Ts          time.Time `gorm:"uniqueIndex:ts_index,sort:desc"`
+	Idx         int64     `gorm:"uniqueIndex:idx_index,sort:asc"`
 	Sub         string
 	Pubkey_hash string
 }
