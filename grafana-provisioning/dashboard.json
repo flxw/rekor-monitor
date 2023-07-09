@@ -4,8 +4,8 @@
             {
                 "builtIn": 1,
                 "datasource": {
-                    "type": "grafana",
-                    "uid": "-- Grafana --"
+                    "type": "postgres",
+                    "uid": "AutoPostgreSQL"
                 },
                 "enable": true,
                 "hide": true,
@@ -18,14 +18,14 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 1,
+    "id": 2,
     "links": [],
     "liveNow": false,
     "panels": [
         {
             "datasource": {
                 "type": "postgres",
-                "uid": "e06bcdee-2180-4145-a2fd-c54f5ab1149b"
+                "uid": "PD1ECE71794105559"
             },
             "fieldConfig": {
                 "defaults": {
@@ -102,31 +102,17 @@
                 {
                     "datasource": {
                         "type": "postgres",
-                        "uid": "e06bcdee-2180-4145-a2fd-c54f5ab1149b"
+                        "uid": "PD1ECE71794105559"
                     },
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n  ts,\n  idx\nFROM\n  crawled_entries\nWHERE\n  ts BETWEEN $__timeFrom() AND $__timeTo() ",
+                    "rawSql": "SELECT\n  ts,\n  idx\nFROM\n  crawled_entries\nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() ",
                     "refId": "A",
                     "sql": {
                         "columns": [
                             {
-                                "parameters": [
-                                    {
-                                        "name": "ts",
-                                        "type": "functionParameter"
-                                    }
-                                ],
-                                "type": "function"
-                            },
-                            {
-                                "parameters": [
-                                    {
-                                        "name": "idx",
-                                        "type": "functionParameter"
-                                    }
-                                ],
+                                "parameters": [],
                                 "type": "function"
                             }
                         ],
@@ -138,32 +124,8 @@
                                 "type": "groupBy"
                             }
                         ],
-                        "limit": 50,
-                        "whereJsonTree": {
-                            "children1": [
-                                {
-                                    "id": "b9bbab88-89ab-4cde-b012-31893a12626d",
-                                    "properties": {
-                                        "field": "ts",
-                                        "operator": "less",
-                                        "value": [
-                                            null
-                                        ],
-                                        "valueSrc": [
-                                            "value"
-                                        ],
-                                        "valueType": [
-                                            "datetime"
-                                        ]
-                                    },
-                                    "type": "rule"
-                                }
-                            ],
-                            "id": "898a9a8a-89ab-4cde-b012-31893a0f4384",
-                            "type": "group"
-                        }
-                    },
-                    "table": "crawled_entries"
+                        "limit": 50
+                    }
                 }
             ],
             "title": "Rekor Index Growth Over The Last Two Months",
@@ -194,6 +156,6 @@
     "timezone": "",
     "title": "The public Rekor monitor",
     "uid": "ec2c1f22-6d41-472c-bb25-89125e86c1fb",
-    "version": 6,
+    "version": 3,
     "weekStart": "monday"
 }
