@@ -37,6 +37,130 @@
                         "axisColorMode": "text",
                         "axisLabel": "",
                         "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "id": 2,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "never",
+                "stacking": "none",
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "PD1ECE71794105559"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT \n  to_char(ts, 'YYYY-MM'),\n  SUM(CASE WHEN sub = '' THEN 1 ELSE 0 END) AS nonkeyless,\n  SUM(CASE WHEN sub = '' THEN 0 ELSE 1 END) AS keyless\nFROM crawled_entries \nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() \nGROUP BY to_char(ts, 'YYYY-MM')",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [
+                                    {
+                                        "name": "ts",
+                                        "type": "functionParameter"
+                                    }
+                                ],
+                                "type": "function"
+                            },
+                            {
+                                "parameters": [
+                                    {
+                                        "name": "sub",
+                                        "type": "functionParameter"
+                                    }
+                                ],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    },
+                    "table": "crawled_entries"
+                }
+            ],
+            "title": "Adoption of keyless signing",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "PD1ECE71794105559"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
                         "fillOpacity": 0,
@@ -83,7 +207,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 0
+                "y": 8
             },
             "id": 1,
             "options": {
@@ -107,7 +231,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n  ts,\n  idx\nFROM\n  crawled_entries\nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() ",
+                    "rawSql": "SELECT\n  DATE(ts),\n  MAX(idx)\nFROM\n  crawled_entries\nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() \nGROUP BY DATE(ts)\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -156,6 +280,6 @@
     "timezone": "",
     "title": "The public Rekor monitor",
     "uid": "ec2c1f22-6d41-472c-bb25-89125e86c1fb",
-    "version": 3,
+    "version": 4,
     "weekStart": "monday"
 }

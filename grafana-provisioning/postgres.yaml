@@ -11,7 +11,7 @@ datasources:
       password: $DB_USER_PASSWORD
     jsonData:
       database: $DB_NAME
-      sslmode: 'require' # disable/require/verify-ca/verify-full
+      sslmode: $DB_SSL_MODE # disable/require/verify-ca/verify-full
       maxOpenConns: 50 # Grafana v5.4+
       maxIdleConns: 50 # Grafana v5.4+
       maxIdleConnsAuto: true # Grafana v9.5.1+

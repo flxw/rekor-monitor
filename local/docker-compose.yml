@@ -1,26 +1,32 @@
 services:
-  mysql:
-    image: "mysql"
+  postgres:
+    image: "library/postgres:12"
     environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=1
-    volumes:
-      - ./sql:/docker-entrypoint-initdb.d/:ro
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_DB=test
       
   grafana:
     depends_on:
-      - mysql
+      - postgres
     image: "grafana/grafana-enterprise"
     ports: 
       - "3000:3000"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ../grafana-provisioning/postgres.yaml:/etc/grafana/provisioning/datasources/postgres.yaml
+      - ../grafana-provisioning/providers.yaml:/etc/grafana/provisioning/dashboards/providers.yaml
+      - ../grafana-provisioning/dashboard.json:/var/lib/grafana/dashboards/dashboard.json
+    environment:
+      - DB_USER_NAME=test
+      - DB_USER_PASSWORD=test
+      - DB_NAME=test
+      - DB_URL=postgres
+      - DB_SSL_MODE=disable
 
   crawler:
     depends_on:
-      - mysql
+      - postgres
     build:
-      context: "."
-    volumes:
-      - ./config.yml:/config.yml
+      context: "../"
     environment:
-      - DATABASE_URL=grafana:password@tcp(mysql)/rekor
+      - DATABASE_URL=postgres://test:test@postgres/test
