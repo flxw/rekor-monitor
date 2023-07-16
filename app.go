@@ -19,6 +19,8 @@ import (
 	"github.com/sigstore/rekor/pkg/generated/models"
 	"github.com/sigstore/rekor/pkg/types"
 
+	"github.com/robfig/cron/v3"
+
 	// these imports exist to trigger the package init methods
 	_ "github.com/sigstore/rekor/pkg/types/alpine/v0.0.1"
 	_ "github.com/sigstore/rekor/pkg/types/cose/v0.0.1"
@@ -54,6 +56,24 @@ type EntryInfo struct {
 }
 
 func main() {
+	c := cron.New()
+	c.AddFunc("@every 20s", CommenceCrawlRun)
+	c.AddFunc("@daily", RefreshMaterializedViews)
+	c.Start()
+	select {} // block forever
+}
+
+func RefreshMaterializedViews() {
+	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
+	if err != nil {
+		log.Panicln("failed to connect database")
+	}
+
+	db.Exec("REFRESH MATERIALIZED VIEW keyless_usage_per_month_mv")
+	db.Exec("REFRESH MATERIALIZED VIEW maximum_date_index_mv")
+}
+
+func CommenceCrawlRun() {
 	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
 	if err != nil {
 		log.Panicln("failed to connect database")
@@ -66,13 +86,6 @@ func main() {
 		client.WithUserAgent(Config.Rekor.UserAgent),
 		client.WithRetryCount(Config.Rekor.RetryCount))
 
-	for {
-		ExecuteCrawlRun(rekorClient, db)
-		time.Sleep(SLEEP_DURATION)
-	}
-}
-
-func ExecuteCrawlRun(rekorClient *rekorClient.Rekor, db *gorm.DB) {
 	startIndex := DetermineMostRecentlyCrawledIndex(db) + 1
 	maximumIndex := CalculateCurrentMaximumIndex(rekorClient)
 	targetIndex := Min(startIndex+BATCH_MAXIMUM, maximumIndex)
