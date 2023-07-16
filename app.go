@@ -90,7 +90,7 @@ func CommenceCrawlRun() {
 	maximumIndex := CalculateCurrentMaximumIndex(rekorClient)
 	targetIndex := Min(startIndex+BATCH_MAXIMUM, maximumIndex)
 
-	log.Println("Crawling until index:", targetIndex)
+	log.Println("Crawling the following index range:", startIndex, targetIndex)
 
 	rekordQueue := make(chan CrawledEntry)
 	go SpawnRekorCrawlerRoutines(startIndex, targetIndex, rekorClient, rekordQueue)
@@ -107,7 +107,7 @@ func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *reko
 	defer close(rekordQueue)
 
 	var wg sync.WaitGroup
-	var number = int(toIndex - fromIndex - 1)
+	var number = int(toIndex - fromIndex)
 	wg.Add(number)
 
 	for i := fromIndex + 1; i < toIndex; i++ {
