@@ -111,7 +111,7 @@ func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *reko
 	var number = int(toIndex - fromIndex)
 	wg.Add(number)
 
-	for i := fromIndex + 1; i < toIndex; i++ {
+	for i := fromIndex; i < toIndex; i++ {
 		go FetchEntryByUuid(rekorClient, i, &wg, rekordQueue)
 	}
 	wg.Wait()
