@@ -56,7 +56,7 @@ type EntryInfo struct {
 }
 
 func main() {
-	c := cron.New()
+	c := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger)))
 	c.AddFunc("@every 20s", CommenceCrawlRun)
 	c.AddFunc("@daily", RefreshMaterializedViews)
 	c.Start()
@@ -101,6 +101,7 @@ func CommenceCrawlRun() {
 	}
 
 	db.Create(&crawledEntries)
+	log.Println("Finished crawling and persisting the entries")
 }
 
 func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
