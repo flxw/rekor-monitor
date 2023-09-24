@@ -73,25 +73,25 @@ resource "digitalocean_app" "rekor-monitor" {
       }
 
       env {
-        key = "GF_DATABASE_TYPE"
+        key   = "GF_DATABASE_TYPE"
         value = "postgres"
       }
 
       env {
-        key = "GF_DATABASE_URL"
+        key   = "GF_DATABASE_URL"
         value = "postgres://${digitalocean_database_user.grafana-db-user.name}:${digitalocean_database_user.grafana-db-user.password}@${digitalocean_database_cluster.postgres-cluster.host}:${digitalocean_database_cluster.postgres-cluster.port}/${digitalocean_database_db.grafana-db.name}"
-        type = "SECRET"
+        type  = "SECRET"
       }
 
       env {
-        key = "GF_DATABASE_SSL_MODE"
+        key   = "GF_DATABASE_SSL_MODE"
         value = "require"
       }
 
       env {
         key   = "DB_URL"
         value = "${digitalocean_database_cluster.postgres-cluster.host}:${digitalocean_database_cluster.postgres-cluster.port}"
-        type = "SECRET"
+        type  = "SECRET"
       }
 
       env {
@@ -148,5 +148,6 @@ resource "digitalocean_app" "rekor-monitor" {
         type  = "SECRET"
       }
     }
+
   }
 }
