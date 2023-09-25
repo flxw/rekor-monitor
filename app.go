@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"log/slog"
+	"os"
 	"sync"
 	"time"
 
@@ -55,6 +56,9 @@ type EntryInfo struct {
 }
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	c := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger)))
 	c.AddFunc("@every 20s", CommenceCrawlRun)
 	c.AddFunc("@daily", RefreshMaterializedViews)

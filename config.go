@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -23,7 +23,7 @@ var Config _Config
 func init() {
 	err := cleanenv.ReadConfig("config.yml", &Config)
 	if err != nil {
-		log.Println("WARNING: Could not read the configuration file - falling back to defaults and environment variables")
+		slog.Warn("WARNING: Could not read the configuration file - falling back to defaults and environment variables")
 	}
 	cleanenv.ReadEnv(&Config)
 }
