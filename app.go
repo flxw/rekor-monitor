@@ -74,6 +74,11 @@ func RefreshMaterializedViews() {
 
 	db.Exec("REFRESH MATERIALIZED VIEW keyless_usage_per_month_mv")
 	db.Exec("REFRESH MATERIALIZED VIEW maximum_date_index_mv")
+
+	defer func() {
+		dbInstance, _ := db.DB()
+		_ = dbInstance.Close()
+	}()
 }
 
 func CommenceCrawlRun() {
@@ -105,6 +110,11 @@ func CommenceCrawlRun() {
 
 	db.Create(&crawledEntries)
 	slog.Info("Finished crawl run and persisted the entries")
+
+	defer func() {
+		dbInstance, _ := db.DB()
+		_ = dbInstance.Close()
+	}()
 }
 
 func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
