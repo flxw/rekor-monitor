@@ -3,8 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -66,7 +65,7 @@ func main() {
 func RefreshMaterializedViews() {
 	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
 	if err != nil {
-		log.Panicln("failed to connect database")
+		slog.Error("failed to connect to database", "message", err.Error())
 	}
 
 	db.Exec("REFRESH MATERIALIZED VIEW keyless_usage_per_month_mv")
@@ -76,7 +75,7 @@ func RefreshMaterializedViews() {
 func CommenceCrawlRun() {
 	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
 	if err != nil {
-		log.Panicln("failed to connect database")
+		slog.Error("failed to connect to database", "message", err.Error())
 	}
 
 	db.AutoMigrate(&CrawledEntry{})
@@ -90,7 +89,7 @@ func CommenceCrawlRun() {
 	maximumIndex := CalculateCurrentMaximumIndex(rekorClient)
 	targetIndex := Min(startIndex+BATCH_MAXIMUM, maximumIndex)
 
-	log.Println("Crawling the following index range:", startIndex, targetIndex)
+	slog.Info("Commencing crawl run", "startIndex", startIndex, "targetIndex", targetIndex)
 
 	rekordQueue := make(chan CrawledEntry)
 	go SpawnRekorCrawlerRoutines(startIndex, targetIndex, rekorClient, rekordQueue)
@@ -101,7 +100,7 @@ func CommenceCrawlRun() {
 	}
 
 	db.Create(&crawledEntries)
-	log.Println("Finished crawling and persisting the entries")
+	slog.Info("Finished crawl run and persisted the entries")
 }
 
 func SpawnRekorCrawlerRoutines(fromIndex int64, toIndex int64, rekorClient *rekorClient.Rekor, rekordQueue chan CrawledEntry) {
@@ -140,7 +139,7 @@ func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.Wait
 	resp, err := rekorClient.Entries.GetLogEntryByIndex(params)
 
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 
@@ -149,19 +148,19 @@ func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.Wait
 
 		pe, err := models.UnmarshalProposedEntry(bytes.NewReader(b), runtime.JSONConsumer())
 		if err != nil {
-			log.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 
 		eimpl, err := types.UnmarshalEntry(pe)
 		if err != nil {
-			log.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 
 		verifier, err := eimpl.Verifier()
 		if err != nil {
-			log.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 
@@ -172,7 +171,7 @@ func FetchEntryByUuid(rekorClient *rekorClient.Rekor, index int64, wg *sync.Wait
 
 		identities, _ := verifier.Identities()
 		if err != nil {
-			log.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 
@@ -194,7 +193,7 @@ func DetermineMostRecentlyCrawledIndex(db *gorm.DB) int64 {
 	db.Raw(query).Scan(&index)
 	if index == -1 {
 		index = Config.Rekor.StartIndex
-		log.Println("Could not fetch index from db, falling back to config start index:", index)
+		slog.Warn("Could not fetch index from db, falling back to config start index")
 	}
 
 	return index
