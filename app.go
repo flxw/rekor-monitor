@@ -59,6 +59,9 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
+	slog.Warn("This is a warning")
+	slog.Error("This is an error")
+
 	c := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger)))
 	c.AddFunc("@every 20s", CommenceCrawlRun)
 	c.AddFunc("@daily", RefreshMaterializedViews)
