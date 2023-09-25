@@ -82,6 +82,7 @@ func RefreshMaterializedViews() {
 }
 
 func CommenceCrawlRun() {
+	start := time.Now()
 	db, err := gorm.Open(postgres.Open(Config.Database.String), &gorm.Config{})
 	if err != nil {
 		slog.Error("failed to connect to database", "message", err.Error())
@@ -109,7 +110,9 @@ func CommenceCrawlRun() {
 	}
 
 	db.Create(&crawledEntries)
-	slog.Info("Finished crawl run and persisted the entries")
+	t := time.Now()
+	elapsed := t.Sub(start)
+	slog.Info("Finished crawl run", "startIndex", startIndex, "targetIndex", targetIndex, "duration", elapsed)
 
 	defer func() {
 		dbInstance, _ := db.DB()
