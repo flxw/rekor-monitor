@@ -99,8 +99,6 @@ func CommenceCrawlRun() {
 	maximumIndex := CalculateCurrentMaximumIndex(rekorClient)
 	targetIndex := Min(startIndex+BATCH_MAXIMUM, maximumIndex)
 
-	slog.Info("Commencing crawl run", "startIndex", startIndex, "targetIndex", targetIndex)
-
 	rekordQueue := make(chan CrawledEntry)
 	go SpawnRekorCrawlerRoutines(startIndex, targetIndex, rekorClient, rekordQueue)
 
